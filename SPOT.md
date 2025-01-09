@@ -1,3 +1,11 @@
+# 새 프로젝트
+```sh
+mkdir example
+cd example
+go mod init example.com/example
+```
+# 추천 디렉터리 구조
+```
 /example            # 프로젝트 루트 디렉토리
   ├── /cmd          # 애플리케이션의 엔트리 포인트
   │    └── /example
@@ -9,3 +17,4 @@
   │    └── /config  # 구성 관리 패키지
   ├── go.mod        # 모듈 정보 파일
   ├── go.sum        # 의존성 체크섬 파일
+```
