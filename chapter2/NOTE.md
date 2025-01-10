@@ -269,3 +269,63 @@ if err != nil {
 에러 상황에 대한 명확한 정보를 제공함으로써 가독성과 유지보수성을 향상합니다.  
 맞춤형 에러는 호출 함수가 다양한 종류의 문제를 처리하는 방법에 대해 명확한 판단을 내릴 수 있도록  
 체계적인 에러 정보 전달 메커니즘을 제공합니다.
+
+# Recipe 5: Goroutines와 Channels
+
+#### 상황
+
+여러 소스로부터 동시에 대량의 데이터를 처리해야 하는 시스템을 개발하는 도전 과제를 생각해 보십시오. 데이터 세트가 서로 관련이 없을 경우, 이를 순차적으로 처리하는 것은 시간 효율적이지 않을 수 있습니다. 자원을 최대한 활용하고 처리 시간을 단축하기 위해서는 여러 작업을 동시에 실행할 수 있는 메커니즘이 필요합니다. 동시에 실행되는 이러한 프로세스를 효율적으로 관리하는 것이 핵심 문제이며, 이는 지연이나 경합 상황 없이 데이터를 처리하는 데 필수적입니다.
+
+#### 실용적인 해결책
+
+Go의 동시성 모델은 goroutine과 channel을 중심으로 구성되어 이 문제를 강력하게 해결할 수 있습니다. Goroutine은 Go 런타임에서 관리하는 경량 스레드로, 최소한의 오버헤드로 동시 작업을 수행할 수 있게 합니다. Channel은 goroutine 간의 통신을 가능하게 하며, 실행을 동기화하고 데이터를 안전하게 공유할 수 있도록 도와줍니다.
+
+이 문제를 해결하기 위해 각 데이터 세트를 처리하는 goroutine을 생성할 수 있습니다. 이를 통해 각 데이터 세트는 독립적이고 동시에 처리됩니다. Channel을 사용하면 각 goroutine의 결과를 수집하거나 공유 리소스에 대한 접근을 제어하여 경합 조건을 방지할 수 있습니다.
+
+다음은 기본 구현 예제입니다:
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+// 데이터를 처리하는 함수
+func processData(data int, wg *sync.WaitGroup, results chan<- int) {
+    defer wg.Done()
+    // 간단한 연산으로 데이터 처리 시뮬레이션
+    result := data * 2
+    results <- result
+}
+
+func main() {
+    var wg sync.WaitGroup
+    dataSets := []int{1, 2, 3, 4, 5}
+    results := make(chan int, len(dataSets))
+
+    // 각 데이터 세트에 대해 goroutine 생성
+    for _, data := range dataSets {
+        wg.Add(1)
+        go processData(data, &wg, results)
+    }
+
+    // 모든 goroutine이 종료되면 results 채널 닫기
+    go func() {
+        wg.Wait()
+        close(results)
+    }()
+
+    // 결과 수집
+    for result := range results {
+        fmt.Println(result)
+    }
+}
+```
+
+#### 설명
+
+위 샘플 프로그램에서 `processData` 함수는 데이터를 처리한 후 결과를 channel로 보내는 작업을 시뮬레이션합니다. `sync.WaitGroup`은 모든 goroutine이 작업을 완료할 때까지 대기하는 데 사용됩니다. `dataSets`의 각 데이터 세트는 별도의 goroutine에서 처리되며, 이를 통해 동시 처리가 가능합니다. 처리된 결과는 `results` channel에 전송되며, main goroutine에서 수집되어 출력됩니다. 
+
+이 방법은 대량의 데이터를 효율적으로 병렬 처리하면서 경합 조건을 방지하는 데 적합한 동시성 패턴을 보여줍니다.
