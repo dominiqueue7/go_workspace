@@ -66,7 +66,7 @@ Go에서 복잡한 타입을 정의하고 메모리를 최적화하려면 Pointe
 
 이러한 개념을 마스터하면 데이터 구조와 메모리를 다루는 방식의 제어 및 효율성이 크게 향상되어 효율적인 Go 코드를 작성할 수 있습니다.
 
-**Recipe 2: Closures와 Defer 이해하기**
+# **Recipe 2: Closures와 Defer 이해하기**
 
 ---
 
@@ -137,3 +137,70 @@ func readFile(filename string) {
 
 - **클로저(Closures)**: 외부 함수의 변수 상태를 기억하고 유지할 수 있는 내부 함수.
 - **defer 구문**: 함수 종료 시 특정 작업을 예약하여 리소스 누수를 방지하고 코드를 간결하게 유지.
+
+# recipe 3: 인터페이스 구현과 다형성
+
+---
+
+### 상황
+
+유연하고 모듈화된 코드를 작성하려면 인터페이스가 필수적입니다.  
+인터페이스는 행동에 대한 계약을 표현하면서도 해당 행동이 어떻게 구현되는지는 설명하지 않아, 타입 간의 결합도를 낮추고 재사용성을 높여줍니다.  
+공유 메서드의 구현을 통해 Go 언어에서는 단일 함수가 다양한 타입과 상호작용할 수 있으며, 이를 다형성(polymorphism)이라고 합니다.  
+이는 인터페이스를 통해 이루어집니다.
+
+---
+
+### 실용적 해결책
+
+Go에서 인터페이스를 정의하려면 `interface` 키워드 뒤에 메서드 시그니처 집합을 사용합니다.  
+인터페이스의 모든 메서드를 구현하는 타입은 해당 인터페이스를 만족한다고 하며, 인터페이스가 필요한 모든 컨텍스트에서 사용할 수 있습니다.
+
+```go
+type Speaker interface {
+    Speak() string
+}
+
+type Dog struct {
+    Name string
+}
+
+func (d Dog) Speak() string {
+    return "Woof! My name is " + d.Name
+}
+
+type Robot struct {
+    Model string
+}
+
+func (r Robot) Speak() string {
+    return "Beep boop. I am model " + r.Model
+}
+```
+
+위의 예제에서 `Dog`와 `Robot` 타입은 `Speak` 메서드를 정의함으로써 `Speaker` 인터페이스를 구현하고 있습니다.  
+따라서 `Dog`와 `Robot`의 인스턴스는 `Speaker`를 필요로 하는 모든 컨텍스트에서 사용할 수 있습니다.
+
+---
+
+### 다형성
+
+다형성은 인터페이스를 사용하여 인터페이스를 구현하는 모든 타입에서 동작하는 함수를 작성할 때 나타납니다.  
+다음 함수는 `Speaker`를 받아들이며, 해당 객체의 `Speak` 메서드를 호출합니다. 구체적인 타입과는 무관하게 동작합니다.
+
+```go
+func introduceSpeaker(s Speaker) {
+    fmt.Println(s.Speak())
+}
+
+func main() {
+    dog := Dog{Name: "Buddy"}
+    robot := Robot{Model: "XJ-9"}
+
+    introduceSpeaker(dog)   // 출력: Woof! My name is Buddy
+    introduceSpeaker(robot) // 출력: Beep boop. I am model XJ-9
+}
+```
+
+`introduceSpeaker` 함수는 모든 `Speaker`와 함께 작동하며, 다형성을 보여줍니다.  
+이 접근법은 Go 프로그램의 유연성과 모듈성을 크게 향상시켜, 확장성과 유지보수가 용이한 구성 요소를 설계할 수 있게 합니다.
