@@ -58,5 +58,22 @@ func main() {
 	// 추출한 책 정보 출력
 	for _, book := range textbooks {
 		fmt.Printf("Parsed Book: %+v\n", book)
-	}	
+	}
+	
+	csvfilename := "books.csv"
+	// CSV 파일로 내보내기
+	if err := services.ExportBooksToCSV(csvfilename, books); err != nil {
+		fmt.Printf("Failed to export books to CSV: %s\n", err)
+	} else {
+		fmt.Println("Books successfully exported to CSV.")
+	}
+
+	// CSV 파일에서 가져오기
+	csvimportedBooks, err := services.ImportBooksFromCSV(csvfilename)
+	if err != nil {
+		fmt.Printf("Failed to import books from CSV: %s\n", err)
+	} else {
+		fmt.Println("Imported Books:", csvimportedBooks)
+	}
+	
 }

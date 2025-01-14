@@ -3,6 +3,7 @@ package services
 import (
 	"LibraGo/models"
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -111,3 +112,67 @@ func ParseBooksFromFile(filename string) ([]models.Book, error) {
 	// 추출한 Book 리스트 반환
 	return books, nil
 }
+
+// CSV 파일에서 책 정보 가져오기
+func ImportBooksFromCSV(filename string) ([]models.Book, error) {
+	// 파일 열기
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err // 파일 열기 실패 시 에러 반환
+	}
+	defer file.Close()
+
+	// CSV 파일 읽기
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll() // 모든 행 읽기
+	if err != nil {
+		return nil, err // 읽기 실패 시 에러 반환
+	}
+
+	var books []models.Book
+	// 각 행 처리
+	for _, record := range records {
+		// 페이지 수를 문자열에서 정수로 변환
+		pages, err := strconv.Atoi(record[2])
+		if err != nil {
+			// 변환 실패 시 로그를 출력하고 다음 행으로 넘어감
+			fmt.Printf("Invalid page number in record: %s\n", record)
+			continue
+		}
+
+		// Book 구조체 생성 후 리스트에 추가
+		books = append(books, models.Book{
+			Title:  record[0],
+			Author: record[1],
+			Pages:  pages,
+		})
+	}
+
+	return books, nil // 결과 반환
+}
+
+// CSV 파일로 책 정보 내보내기
+func ExportBooksToCSV(filename string, books []models.Book) error {
+	// 파일 생성
+	file, err := os.Create(filename)
+	if err != nil {
+		return err // 파일 생성 실패 시 에러 반환
+	}
+	defer file.Close()
+
+	// CSV 작성기 생성
+	writer := csv.NewWriter(file)
+	defer writer.Flush() // 모든 데이터를 쓰고 닫기
+
+	// 각 Book 구조체를 CSV 행으로 변환
+	for _, book := range books {
+		record := []string{book.Title, book.Author, strconv.Itoa(book.Pages)}
+		if err := writer.Write(record); err != nil {
+			return err // 쓰기 실패 시 에러 반환
+		}
+	}
+
+	return nil // 성공적으로 저장 시 nil 반환
+}
+
+
