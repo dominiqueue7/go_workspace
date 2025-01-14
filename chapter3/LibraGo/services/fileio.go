@@ -4,6 +4,7 @@ import (
 	"LibraGo/models"
 	"bufio"
 	"encoding/json"
+	"encoding/xml"
 	"os"
 )
 
@@ -45,4 +46,22 @@ func LoadBooks(filename string) ([]models.Book, error) {
 		books = append(books, book)
 	}
 	return books, scanner.Err()
+}
+
+func ExportBooksToXML(books []models.Book) (string, error) {
+    library := models.Library{Books: books}
+    xmlData, err := xml.MarshalIndent(library, "", "  ")
+    if err != nil {
+        return "", err
+    }
+    return string(xmlData), nil
+}
+
+func ImportBooksFromXML(xmlData string) ([]models.Book, error) {
+    var library models.Library
+    err := xml.Unmarshal([]byte(xmlData), &library)
+    if err != nil {
+        return nil, err
+    }
+    return library.Books, nil
 }

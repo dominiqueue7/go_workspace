@@ -28,4 +28,21 @@ func main() {
 	}
 
 	fmt.Println("Loaded Books:", loadedBooks)
+
+	// XML로 책 정보 내보내기
+	xmlOutput, err := services.ExportBooksToXML(books)
+	if err != nil {
+		fmt.Println("Error exporting books to XML:", err)
+		return
+	}
+	fmt.Println("XML Output:", xmlOutput)
+
+	// XML에서 책 정보 가져오기
+	importedBooks, err := services.ImportBooksFromXML(xmlOutput)
+	if err != nil {
+		fmt.Println("Error importing books from XML:", err)
+		return
+	}
+	fmt.Println("Imported Books:", importedBooks)
+	
 }
