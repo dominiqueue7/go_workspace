@@ -5,7 +5,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 )
 
 func SaveBooks(filename string, books []models.Book) error {
@@ -64,4 +67,47 @@ func ImportBooksFromXML(xmlData string) ([]models.Book, error) {
         return nil, err
     }
     return library.Books, nil
+}
+
+var bookDetailsPattern = regexp.MustCompile(`Title: (.+), Author: (.+), Pages: (\d+)`)
+func ParseBooksFromFile(filename string) ([]models.Book, error) {
+	// 파일 열기
+	file, err := os.Open(filename)
+	if err != nil {
+		// 파일 열기 실패 시 에러 반환
+		return nil, err
+	}
+	defer file.Close() // 함수 종료 시 파일 닫기
+
+	var books []models.Book // 결과로 반환할 Book 리스트
+	scanner := bufio.NewScanner(file) // 파일을 한 줄씩 읽기 위한 Scanner
+
+	// 파일을 한 줄씩 읽음
+	for scanner.Scan() {
+		// 현재 줄에서 정규식 패턴에 매칭되는 부분 찾기
+		matches := bookDetailsPattern.FindStringSubmatch(scanner.Text())
+		if len(matches) == 4 {
+			// matches[1]: 제목, matches[2]: 저자, matches[3]: 페이지 수
+			title := matches[1]
+			author := matches[2]
+			// 페이지 수를 문자열에서 정수로 변환
+			pages, err := strconv.Atoi(matches[3])
+			if err != nil {
+				// 변환 실패 시 오류를 출력하고 다음 줄로 진행
+				fmt.Printf("Invalid page number for book '%s': %s\n", title, err)
+				continue
+			}
+
+			// Book 객체 생성 후 리스트에 추가
+			books = append(books, models.Book{Title: title, Author: author, Pages: pages})
+		}
+	}
+
+	// 파일 읽는 도중 에러가 발생했는지 확인
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	// 추출한 Book 리스트 반환
+	return books, nil
 }

@@ -45,4 +45,18 @@ func main() {
 	}
 	fmt.Println("Imported Books:", importedBooks)
 	
+	// 파싱할 텍스트 파일 이름
+	textfilename := "book_listings.txt"
+
+	// 텍스트 파일에서 책 정보 추출
+	textbooks, err := services.ParseBooksFromFile(textfilename)
+	if err != nil {
+		fmt.Println("Error parsing books from file:", err)
+		return
+	}
+
+	// 추출한 책 정보 출력
+	for _, book := range textbooks {
+		fmt.Printf("Parsed Book: %+v\n", book)
+	}	
 }
