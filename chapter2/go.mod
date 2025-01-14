@@ -1,4 +1,4 @@
-module chapter2
+module example.com/myproject
 
 go 1.23.4
 
