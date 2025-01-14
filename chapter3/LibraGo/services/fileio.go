@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -175,4 +176,26 @@ func ExportBooksToCSV(filename string, books []models.Book) error {
 	return nil // 성공적으로 저장 시 nil 반환
 }
 
+// 이진 파일 읽기
+func ReadCoverImage(filePath string) ([]byte, error) {
+	// 파일 열기
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err // 파일 열기 실패 시 에러 반환
+	}
+	defer file.Close() // 파일 닫기 예약
+
+	// 파일의 모든 데이터를 읽어 바이트 슬라이스로 반환
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err // 읽기 실패 시 에러 반환
+	}
+	return imageData, nil // 읽은 데이터 반환
+}
+
+// 이진 파일 쓰기
+func WriteCoverImage(filePath string, data []byte) error {
+	// 바이트 데이터를 파일에 쓰기 (쓰기 권한 0644)
+	return os.WriteFile(filePath, data, 0644)
+}
 

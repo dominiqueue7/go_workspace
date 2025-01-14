@@ -384,3 +384,326 @@ Parsed Book: {Title:Go in Action Author:William Kennedy Pages:300}
 
 이 레시피는 정규식을 활용해 비정형 데이터를 구조화된 데이터로 변환하는 방법을 보여줍니다. "LibraGo"는 이제 비공식적인 텍스트 소스에서도 책 정보를 효과적으로 가져올 수 있어 더 유연한 데이터 처리 능력을 갖추게 되었습니다.
 
+# recipe 4
+레시피 4: CSV 및 텍스트 데이터 효율적으로 처리하기
+
+---
+
+### **상황**
+
+"LibraGo"는 이제 각 행에 책의 제목, 저자, 페이지 수 필드가 포함된 CSV 파일에서 도서 컬렉션을 가져오는 기능을 통합해야 합니다. 또한, 사용자 도서 컬렉션을 CSV 파일로 내보내는 기능도 제공해야 합니다.
+
+---
+
+### **실질적인 솔루션**
+
+Go의 `encoding/csv` 패키지는 CSV 데이터를 읽고 쓰는 데 필요한 강력한 기능을 제공합니다. 이를 활용하여 "LibraGo"에서 CSV 형식의 데이터를 처리하는 기능을 구현합니다.
+
+---
+
+### **1. CSV 파일에서 책 정보 가져오기**
+
+CSV 파일에서 책 정보를 읽어와 `Book` 구조체로 변환하는 함수입니다.
+
+```go
+import (
+	"encoding/csv" // CSV 파일 처리용 패키지
+	"os"           // 파일 작업을 위한 표준 라이브러리
+	"strconv"      // 문자열을 숫자로 변환하기 위한 패키지
+)
+
+// CSV 파일에서 책 정보 가져오기
+func ImportBooksFromCSV(filename string) ([]Book, error) {
+	// 파일 열기
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err // 파일 열기 실패 시 에러 반환
+	}
+	defer file.Close()
+
+	// CSV 파일 읽기
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll() // 모든 행 읽기
+	if err != nil {
+		return nil, err // 읽기 실패 시 에러 반환
+	}
+
+	var books []Book
+	// 각 행 처리
+	for _, record := range records {
+		// 페이지 수를 문자열에서 정수로 변환
+		pages, err := strconv.Atoi(record[2])
+		if err != nil {
+			// 변환 실패 시 로그를 출력하고 다음 행으로 넘어감
+			fmt.Printf("Invalid page number in record: %s\n", record)
+			continue
+		}
+
+		// Book 구조체 생성 후 리스트에 추가
+		books = append(books, Book{
+			Title:  record[0],
+			Author: record[1],
+			Pages:  pages,
+		})
+	}
+
+	return books, nil // 결과 반환
+}
+```
+
+---
+
+### **2. CSV 파일로 책 정보 내보내기**
+
+`Book` 구조체의 슬라이스를 CSV 파일로 저장하는 함수입니다.
+
+```go
+// CSV 파일로 책 정보 내보내기
+func ExportBooksToCSV(filename string, books []Book) error {
+	// 파일 생성
+	file, err := os.Create(filename)
+	if err != nil {
+		return err // 파일 생성 실패 시 에러 반환
+	}
+	defer file.Close()
+
+	// CSV 작성기 생성
+	writer := csv.NewWriter(file)
+	defer writer.Flush() // 모든 데이터를 쓰고 닫기
+
+	// 각 Book 구조체를 CSV 행으로 변환
+	for _, book := range books {
+		record := []string{book.Title, book.Author, strconv.Itoa(book.Pages)}
+		if err := writer.Write(record); err != nil {
+			return err // 쓰기 실패 시 에러 반환
+		}
+	}
+
+	return nil // 성공적으로 저장 시 nil 반환
+}
+```
+
+---
+
+### **3. 메인 함수에서 통합**
+
+아래는 CSV 가져오기와 내보내기를 메인 애플리케이션에 통합한 예제입니다.
+
+```go
+func main() {
+	filename := "books.csv"
+
+	// CSV로 내보낼 Book 리스트
+	books := []Book{
+		{"The Go Programming Language", "Alan A. A. Donovan", 380},
+		{"Go in Action", "William Kennedy", 300},
+	}
+
+	// CSV 파일로 내보내기
+	if err := ExportBooksToCSV(filename, books); err != nil {
+		fmt.Printf("Failed to export books to CSV: %s\n", err)
+	} else {
+		fmt.Println("Books successfully exported to CSV.")
+	}
+
+	// CSV 파일에서 가져오기
+	importedBooks, err := ImportBooksFromCSV(filename)
+	if err != nil {
+		fmt.Printf("Failed to import books from CSV: %s\n", err)
+	} else {
+		fmt.Println("Imported Books:", importedBooks)
+	}
+}
+```
+
+---
+
+### **작동 방식**
+
+1. **책 정보 가져오기**:
+   - `ImportBooksFromCSV` 함수는 CSV 파일을 열고 데이터를 읽어 `Book` 구조체로 변환합니다.
+   - 행마다 제목, 저자, 페이지 수를 읽어 `Book` 리스트에 추가합니다.
+
+2. **책 정보 내보내기**:
+   - `ExportBooksToCSV` 함수는 `Book` 리스트를 CSV 행으로 변환하여 파일에 씁니다.
+   - 각 `Book`의 데이터를 문자열 슬라이스로 변환하고 `Write` 메서드로 파일에 기록합니다.
+
+3. **통합**:
+   - `main` 함수에서 가져오기와 내보내기 작업을 실행하고 결과를 출력합니다.
+
+---
+
+### **결과 예시**
+
+#### CSV 파일 (`books.csv`):
+```
+The Go Programming Language,Alan A. A. Donovan,380
+Go in Action,William Kennedy,300
+```
+
+#### 프로그램 실행 결과:
+```
+Books successfully exported to CSV.
+Imported Books: [{Title:The Go Programming Language Author:Alan A. A. Donovan Pages:380} {Title:Go in Action Author:William Kennedy Pages:300}]
+```
+
+---
+
+### **결론**
+
+이 기능을 통해 "LibraGo"는 CSV 데이터를 효율적으로 처리할 수 있습니다. 사용자는 친숙한 도구(예: 스프레드시트)를 통해 데이터를 관리하거나 다른 시스템과 데이터를 교환할 수 있습니다.
+
+# recipe 5
+레시피 5: 이진 데이터 처리 및 고급 파일 I/O
+
+---
+
+### **상황**
+
+"LibraGo" 사용자들은 각 도서에 커버 이미지를 연결하고 싶어 합니다. 이를 위해 애플리케이션은 이진 데이터를 효율적으로 처리해야 합니다. 이 기능은 디스크에서 이미지를 읽어와 도서 항목에 연결하고, 이미지를 업데이트하거나 가져오는 작업을 포함합니다. 이러한 작업은 효율적이며 데이터 무결성을 유지하는 방식으로 수행해야 합니다.
+
+---
+
+### **실질적인 솔루션**
+
+Go의 `os`와 `io` 패키지를 사용하면 이진 데이터를 다루는 고급 파일 작업을 구현할 수 있습니다. 아래는 커버 이미지를 예로 들어 이진 데이터를 읽고 쓰는 방법입니다.
+
+---
+
+### **1. 이진 파일 읽기 (커버 이미지)**
+
+디스크에서 커버 이미지를 읽어 바이트 슬라이스로 저장하는 함수입니다.
+
+```go
+import (
+	"io/ioutil" // 파일 읽기 및 쓰기 관련 함수 제공
+	"os"        // 파일 작업을 위한 표준 라이브러리
+)
+
+// 이진 파일 읽기
+func ReadCoverImage(filePath string) ([]byte, error) {
+	// 파일 열기
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err // 파일 열기 실패 시 에러 반환
+	}
+	defer file.Close() // 파일 닫기 예약
+
+	// 파일의 모든 데이터를 읽어 바이트 슬라이스로 반환
+	imageData, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err // 읽기 실패 시 에러 반환
+	}
+	return imageData, nil // 읽은 데이터 반환
+}
+```
+
+---
+
+### **2. 이진 파일 쓰기 (커버 이미지)**
+
+커버 이미지를 디스크에 저장하거나 업데이트하는 함수입니다.
+
+```go
+// 이진 파일 쓰기
+func WriteCoverImage(filePath string, data []byte) error {
+	// 바이트 데이터를 파일에 쓰기 (쓰기 권한 0644)
+	return ioutil.WriteFile(filePath, data, 0644)
+}
+```
+
+---
+
+### **3. 도서 항목에 커버 이미지 연결**
+
+커버 이미지 데이터를 도서 항목과 연결하기 위해 `Book` 구조체를 확장합니다.
+
+```go
+// Book 구조체에 커버 이미지 경로 추가
+type Book struct {
+	Title     string // 책 제목
+	Author    string // 저자 이름
+	Pages     int    // 페이지 수
+	CoverPath string // 커버 이미지 파일 경로
+}
+```
+
+도서 항목을 추가하거나 업데이트할 때 커버 이미지 경로를 처리하도록 애플리케이션을 수정합니다.
+
+---
+
+### **4. 메인 애플리케이션 흐름에 통합**
+
+다음은 커버 이미지를 처리하는 기능을 애플리케이션에 통합하는 예제입니다.
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	// 커버 이미지 파일 경로
+	coverImagePath := "path/to/cover.jpg"
+
+	// 커버 이미지 읽기
+	coverImage, err := ReadCoverImage(coverImagePath)
+	if err != nil {
+		fmt.Printf("Failed to read cover image: %s\n", err)
+		return
+	}
+	fmt.Println("Cover image read successfully")
+
+	// 커버 이미지 업데이트 (다시 쓰기)
+	if err := WriteCoverImage(coverImagePath, coverImage); err != nil {
+		fmt.Printf("Failed to write cover image: %s\n", err)
+		return
+	}
+	fmt.Println("Cover image written successfully")
+}
+```
+
+---
+
+### **5. 애플리케이션에서의 활용**
+
+#### **커버 이미지 추가**
+도서를 추가할 때 커버 이미지 경로를 함께 저장합니다:
+
+```go
+book := Book{
+	Title:     "The Go Programming Language",
+	Author:    "Alan A. A. Donovan",
+	Pages:     380,
+	CoverPath: "covers/the_go_programming_language.jpg",
+}
+```
+
+#### **커버 이미지 가져오기**
+책의 커버 이미지를 가져오려면 다음과 같이 사용합니다:
+
+```go
+coverImage, err := ReadCoverImage(book.CoverPath)
+if err != nil {
+	fmt.Printf("Error loading cover image for book '%s': %s\n", book.Title, err)
+}
+```
+
+---
+
+### **결과**
+
+1. 사용자는 각 책에 커버 이미지를 연결할 수 있습니다.
+2. 커버 이미지를 업데이트하거나 가져오는 작업이 가능해집니다.
+3. 데이터의 무결성을 유지하면서 이진 데이터를 효율적으로 처리할 수 있습니다.
+
+---
+
+### **장점**
+
+- **비주얼 데이터 관리**: 사용자 도서관이 시각적으로 풍부해져 더 유용합니다.
+- **유연성**: 이미지 파일 경로를 저장하므로 이미지를 효율적으로 관리할 수 있습니다.
+- **확장 가능성**: 향후 애플리케이션에서 추가적인 파일 형식(예: PDF, 동영상)을 처리하도록 확장할 수 있습니다.
+
+이 기능은 "LibraGo"를 단순 텍스트 기반 도서 관리 시스템에서 더 강력하고 시각적으로 풍부한 애플리케이션으로 발전시킵니다. 😊

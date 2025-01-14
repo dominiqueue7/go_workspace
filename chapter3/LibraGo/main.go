@@ -75,5 +75,23 @@ func main() {
 	} else {
 		fmt.Println("Imported Books:", csvimportedBooks)
 	}
+
+	// 커버 이미지 파일 경로
+	coverImagePath := "path/to/cover.jpg"
+
+	// 커버 이미지 읽기
+	coverImage, err := services.ReadCoverImage(coverImagePath)
+	if err != nil {
+		fmt.Printf("Failed to read cover image: %s\n", err)
+		return
+	}
+	fmt.Println("Cover image read successfully")
+
+	// 커버 이미지 업데이트 (다시 쓰기)
+	if err := services.WriteCoverImage(coverImagePath, coverImage); err != nil {
+		fmt.Printf("Failed to write cover image: %s\n", err)
+		return
+	}
+	fmt.Println("Cover image written successfully")
 	
 }
