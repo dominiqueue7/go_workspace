@@ -391,3 +391,189 @@ func main() {
 
 이 구현은 `Filter`가 임의의 타입 슬라이스에서 작동할 수 있도록 하며,  
 재사용 가능하고 타입 안전한 코드를 작성할 수 있는 제네릭의 강력함과 유연성을 보여줍니다.
+
+# recipe 7: 리플렉션과 데이터 마샬링  
+
+### 상황  
+컴파일 시 타입 정보를 알지 못한 상태에서 객체를 동적으로 조작하는 시스템을 만드세요.  
+JSON과 같은 REST API에서 유래한 다양한 데이터 유형을 다룰 때 이러한 상황이 자주 발생합니다.  
+효율적으로 이러한 항목을 직렬화된 형식으로 변환하고, 실시간으로 검사 및 수정할 수 있는 기능은 코드에서 해결해야 할 중요한 과제입니다.  
+
+### 실용적인 해결책  
+Go 언어의 `reflect` 패키지와 데이터 마샬링 지원은 이러한 동적 데이터 처리 요구를 해결하는 데 유용합니다.  
+리플렉션(reflection)은 런타임 시 객체를 검사하고 조작하여 타입, 필드, 메서드 등을 확인할 수 있는 기능을 제공합니다.  
+특히 JSON과 관련된 데이터 마샬링은 Go 값을 JSON으로 변환하거나 그 반대로 변환하는 기능을 제공하여 웹 서비스 데이터를 쉽게 처리할 수 있도록 합니다.  
+
+---
+
+### 리플렉션 사용하기  
+리플렉션은 변수의 타입을 검사하고 동적으로 해당 값을 액세스하거나 수정하는 데 사용됩니다.  
+다음은 리플렉션을 사용하여 변수의 타입을 검사하는 간단한 예제입니다:
+
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+func inspectVariable(variable interface{}) {
+	t := reflect.TypeOf(variable)
+	v := reflect.ValueOf(variable)
+	fmt.Println("Type:", t)
+	fmt.Println("Value:", v)
+}
+
+func main() {
+	myVar := 42
+	inspectVariable(myVar)
+}
+```
+
+이 코드는 `inspectVariable` 함수에 전달된 변수의 타입과 값을 가져와 출력하는 방법을 보여줍니다.  
+간단하지만, 알 수 없는 타입을 다룰 수 있는 리플렉션의 강력함을 보여줍니다.  
+
+---
+
+### JSON과 데이터 마샬링  
+Go 객체를 JSON으로 변환하거나 그 반대로 변환하기 위해 `encoding/json` 패키지를 사용합니다.  
+이는 웹 서비스와 같은 JSON을 소비하거나 생성하는 애플리케이션에 필수적입니다.  
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+)
+
+type Person struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+func main() {
+	// Person 객체를 JSON으로 마샬링
+	p := Person{Name: "John Doe", Age: 30}
+	jsonData, err := json.Marshal(p)
+	if err != nil {
+		log.Fatalf("Error marshalling to JSON: %s", err)
+	}
+	fmt.Println(string(jsonData))
+
+	// JSON을 Person 객체로 언마샬링
+	var p2 Person
+	err = json.Unmarshal(jsonData, &p2)
+	if err != nil {
+		log.Fatalf("Error unmarshalling JSON: %s", err)
+	}
+	fmt.Println(p2)
+}
+```
+
+이 예제는 Go의 `Person` 구조체 필드를 JSON의 키에 매핑하여 JSON과 Go 객체 간의 변환을 보여줍니다.  
+리플렉션과 JSON 마샬링/언마샬링을 결합한 강력한 툴킷을 사용하여 동적 데이터 처리를 유연하고 효율적으로 수행할 수 있습니다.  
+
+## 간단하게 풀어서 설명
+
+이해하기 어려우실 수 있어요. 내용을 조금 더 쉽게 풀어서 설명드릴게요. 
+
+### **이야기 속 상황**
+- **문제**: 컴퓨터 프로그램에서 다양한 데이터 형태를 다뤄야 할 때가 많아요. 예를 들어, JSON 데이터를 받아와서 처리하거나, 데이터의 형태를 미리 알 수 없을 때도 있습니다.
+- **목표**: 이런 데이터의 형태를 모르더라도 데이터를 확인하고 수정하거나 JSON 같은 형식으로 변환할 수 있는 기능이 필요합니다.
+
+---
+
+### **Go 언어에서 리플렉션과 데이터 마샬링**
+1. **리플렉션 (Reflection)**  
+   - **뜻**: 데이터나 객체의 "모양(타입)"을 들여다보고 다룰 수 있는 기능입니다.
+   - **예시**: 어떤 값이 주어졌을 때, 그 값의 데이터 타입(숫자인지, 문자열인지 등)을 알아낼 수 있습니다.
+
+   **간단한 예제**:
+   ```go
+   package main
+
+   import (
+       "fmt"
+       "reflect"
+   )
+
+   func inspectVariable(variable interface{}) {
+       t := reflect.TypeOf(variable) // 데이터 타입 확인
+       v := reflect.ValueOf(variable) // 데이터 값 확인
+       fmt.Println("Type:", t)
+       fmt.Println("Value:", v)
+   }
+
+   func main() {
+       myVar := 42
+       inspectVariable(myVar) // 타입과 값을 출력
+   }
+   ```
+   **결과**:
+   ```
+   Type: int
+   Value: 42
+   ```
+
+   - 여기서 중요한 건, `myVar`가 어떤 데이터인지 몰라도 코드에서 타입(`int`)과 값(`42`)을 알 수 있다는 점이에요.
+
+---
+
+2. **데이터 마샬링 (Data Marshalling)**  
+   - **뜻**: 데이터를 JSON과 같은 형식으로 변환하거나, JSON 데이터를 Go 언어의 값으로 변환하는 과정입니다.
+   - 웹사이트나 API에서 데이터를 받아와 처리할 때 매우 중요합니다.
+
+   **예제**:  
+   ```go
+   package main
+
+   import (
+       "encoding/json"
+       "fmt"
+       "log"
+   )
+
+   type Person struct {
+       Name string `json:"name"` // JSON 키와 매칭
+       Age  int    `json:"age"`
+   }
+
+   func main() {
+       // 1. Go 데이터 → JSON 변환 (마샬링)
+       p := Person{Name: "홍길동", Age: 25}
+       jsonData, err := json.Marshal(p)
+       if err != nil {
+           log.Fatalf("JSON 변환 에러: %s", err)
+       }
+       fmt.Println("JSON 데이터:", string(jsonData))
+
+       // 2. JSON → Go 데이터 변환 (언마샬링)
+       var p2 Person
+       err = json.Unmarshal(jsonData, &p2)
+       if err != nil {
+           log.Fatalf("JSON 변환 에러: %s", err)
+       }
+       fmt.Println("Go 객체:", p2)
+   }
+   ```
+
+   **결과**:
+   ```
+   JSON 데이터: {"name":"홍길동","age":25}
+   Go 객체: {홍길동 25}
+   ```
+
+   - `Person` 구조체가 JSON의 키(`name`, `age`)와 자동으로 연결됩니다.  
+   - 이런 방식으로 JSON 데이터를 다룰 수 있어요.
+
+---
+
+### **쉽게 요약**
+- **리플렉션**은 데이터 타입이나 구조를 "실시간으로" 확인하거나 수정할 수 있게 해줍니다.
+- **데이터 마샬링**은 데이터를 JSON으로 변환하거나 JSON 데이터를 Go 언어에서 사용할 수 있는 형태로 변환합니다.
+
+이 두 가지 기능은 웹 서비스나 API와 같은 동적인 데이터를 처리할 때 유용합니다.  
+추가로 궁금한 점이나 자세히 알고 싶은 부분이 있다면 말씀해주세요!
